@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>اجر — فونت فارسی آجری</title>
+<meta name="description" content="اجر؛ فونت فارسی متن‌باز با دو حالت رسمی و فانتزی، الهام‌گرفته از آجر و معبد باستانی.">
+<meta property="og:image" content="banner.png">
+<style>
+@font-face{font-family:"Ajor";src:url(fonts/Ajor-Regular.woff2) format("woff2");font-weight:400}
+@font-face{font-family:"Ajor";src:url(fonts/Ajor-Bold.woff2) format("woff2");font-weight:700}
+@font-face{font-family:"Ajor Fancy";src:url(fonts/AjorFancy-Regular.woff2) format("woff2");font-weight:400}
+@font-face{font-family:"Ajor Fancy";src:url(fonts/AjorFancy-Bold.woff2) format("woff2");font-weight:700}
+:root{--brick:#a24b2a;--brick-d:#6b2c17;--mortar:#4a1d0e;--sand:#f1dcb8;--sand-d:#d9b985;--ink:#2a1209;--gold:#e3a83b}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--sand);color:var(--ink);font:400 1.1rem/2 "Ajor",system-ui,sans-serif}
+a{color:inherit}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+.brick{background-color:var(--brick);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='64'%3E%3Cg stroke='%234a1d0e' stroke-width='4' fill='none'%3E%3Cpath d='M0 2H96M0 34H96M2 0V32M50 32V64'/%3E%3C/g%3E%3C/svg%3E");color:var(--sand)}
+header.hero{position:relative;overflow:hidden;padding:56px 0 0;text-align:center;border-bottom:8px solid var(--mortar)}
+header.hero::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0,#0000 30%,#2a120988)}
+header.hero .wrap{position:relative;z-index:1}
+.kicker{letter-spacing:.2em;font-size:.9rem;opacity:.85;direction:ltr}
+h1{font:700 clamp(6rem,24vw,13rem)/1 "Ajor Fancy";margin:.05em 0 0;color:var(--sand);text-shadow:0 6px 0 var(--mortar)}
+.tag{font-size:1.4rem;margin:0 0 20px}
+.btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:12px}
+.btn{display:inline-block;padding:6px 22px;border:3px solid var(--mortar);background:var(--gold);color:var(--ink);font-weight:700;text-decoration:none;border-radius:14px;box-shadow:0 4px 0 var(--mortar)}
+.btn.alt{background:var(--sand)}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--mortar)}
+.temple{display:block;width:min(720px,100%);margin:10px auto -2px;position:relative;z-index:1}
+section{padding:56px 0}
+h2{font:700 2.2rem/1.4 "Ajor Fancy";margin:0 0 4px;color:var(--brick-d)}
+h2::before{content:"◆ ";color:var(--gold);font-family:system-ui}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px}
+.card{border:4px solid var(--mortar);border-radius:18px;overflow:hidden;background:#fbf1dc;box-shadow:0 8px 0 var(--mortar)}
+.card .top{padding:8px 20px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+.card .top small{font:400 .85rem system-ui;direction:ltr}
+.card .body{padding:16px 20px}
+.try{font-size:2.2rem;line-height:1.9;outline:0;min-height:5em;border-radius:10px;padding:6px 10px}
+.try:focus{background:#fff6;box-shadow:inset 0 0 0 2px var(--gold)}
+.f1{font-family:"Ajor"}.f2{font-family:"Ajor Fancy"}
+.b{font-weight:700}
+.glyphs{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:6px;font-size:2rem;text-align:center;line-height:1.7;margin-top:10px}
+.glyphs span{background:#0001;border-radius:8px}
+.cats{background:var(--brick-d);color:var(--sand);border-block:8px solid var(--mortar)}
+.cats h2{color:var(--sand)}
+.catrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:18px;margin-top:20px;text-align:center}
+.catrow div{background:#0003;border:3px dashed var(--sand-d);border-radius:16px;padding:14px}
+.catrow .big{font:700 4.6rem/1.3 "Ajor Fancy"}
+.catrow code{display:block;direction:ltr;font-size:.85rem;opacity:.85}
+pre{direction:ltr;text-align:left;background:var(--ink);color:var(--sand);padding:16px;border-radius:14px;overflow:auto;font-size:.9rem;line-height:1.6;border:3px solid var(--mortar)}
+footer{padding:28px 0 40px;text-align:center;font-size:.95rem;border-top:8px solid var(--mortar)}
+svg.cat{fill:currentColor}
+.walk{position:absolute;bottom:0;width:54px;color:#2a1209;z-index:2}
+@media(max-width:600px){body{font-size:1rem}.try{font-size:1.7rem}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="cat" viewBox="0 0 100 100">
+    <path d="M24 92C10 72 14 50 34 44L30 16l20 14h6l20-14-4 28c20 6 24 28 10 48z"/>
+    <path d="M82 90c14 2 18-14 8-22" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="40" cy="52" r="4" fill="var(--sand)"/><circle cx="64" cy="52" r="4" fill="var(--sand)"/>
+    <path d="M52 60l4 4-4 4-4-4z" fill="var(--sand)"/>
+  </symbol>
+  <pattern id="bp" width="96" height="64" patternUnits="userSpaceOnUse">
+    <rect width="96" height="64" fill="#a24b2a"/>
+    <path d="M0 2H96M0 34H96M2 0V32M50 32V64" stroke="#4a1d0e" stroke-width="4" fill="none"/>
+  </pattern>
+</svg>
+
+<header class="hero brick">
+  <div class="wrap">
+    <div class="kicker">AJOR · BRICK · TYPEFACE</div>
+    <h1>اجر</h1>
+    <p class="tag">فونت فارسی آجری؛ دو حالت، یک معبد</p>
+    <div class="btns">
+      <a class="btn" href="https://github.com/nikan48g/ajor/releases">دانلود فونت</a>
+      <a class="btn alt" href="https://github.com/nikan48g/ajor">گیت‌هاب</a>
+    </div>
+    <svg class="temple" viewBox="0 0 720 250" role="img" aria-label="معبد آجری با گربه‌ها">
+      <g stroke="#2a1209" stroke-width="5" fill="url(#bp)" stroke-linejoin="round">
+        <rect x="10" y="200" width="700" height="40" rx="6"/>
+        <rect x="60" y="150" width="600" height="50" rx="6"/>
+        <rect x="130" y="100" width="460" height="50" rx="6"/>
+        <rect x="200" y="50" width="320" height="50" rx="6"/>
+        <rect x="280" y="10" width="160" height="40" rx="6"/>
+      </g>
+      <path d="M320 200v-34a40 40 0 0 1 80 0v34z" fill="#2a1209"/>
+      <path d="M340 200v-30a20 20 0 0 1 40 0v30z" fill="#e3a83b"/>
+      <g color="#2a1209">
+        <use href="#cat" x="80" y="108" width="42" height="42"/>
+        <use href="#cat" x="-640" y="108" width="42" height="42" transform="scale(-1 1)"/>
+        <use href="#cat" x="225" y="8" width="42" height="42"/>
+        <use href="#cat" x="-508" y="8" width="42" height="42" transform="scale(-1 1)" style="display:none"/>
+      </g>
+    </svg>
+  </div>
+</header>
+
+<main class="wrap">
+  <section>
+    <h2>دو حالت</h2>
+    <p>نه وزن، نه ضخامت؛ دو شخصیت. هر دو از نسخهٔ «دستخط» گرفته شده‌اند، اما گوشه‌ها را آجرِ آب‌خورده کرده‌ایم: همه‌چیز گرد، نقطه‌ها تراشیده.</p>
+    <div class="cards">
+      <div class="card">
+        <div class="top brick"><span>اجر · رسمی</span><small>Ajor</small></div>
+        <div class="body">
+          <div class="try f1" contenteditable spellcheck="false">آجر به آجر، معبد ساخته می‌شود. پ چ ژ گ</div>
+          <div class="try f1 b" contenteditable spellcheck="false" style="min-height:0">نقطه‌های لوزی، گوشه‌های گرد</div>
+          <p>رسمی و جدی: گوشه‌های گرد و نقطهٔ لوزی. برای متن، رابط کاربری و سند.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="top brick"><span>اجر فانتزی</span><small>Ajor Fancy</small></div>
+        <div class="body">
+          <div class="try f2" contenteditable spellcheck="false">آجر به آجر، معبد ساخته می‌شود. پ چ ژ گ ء</div>
+          <div class="try f2 b" contenteditable spellcheck="false" style="min-height:0">نقطه‌های گرد و چسبیده</div>
+          <p>شوخ و نرم: نقطه‌های گرد، نقطه‌های به‌هم‌چسبیده، سرکش‌های گرد و همزه‌ای که گربه است. برای تیتر و برند.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding-top:0">
+    <h2>حروف</h2>
+    <div class="glyphs f1" dir="rtl" id="g1"></div>
+    <div class="glyphs f2" dir="rtl" id="g2"></div>
+  </section>
+</main>
+
+<section class="cats">
+  <div class="wrap">
+    <h2>گربه‌های معبد</h2>
+    <p>در «اجر فانتزی» همزه (ء) به شکل گربه درمی‌آید. در هر دو حالت دو نشانهٔ تزئینی هم هست.</p>
+    <div class="catrow">
+      <div><div class="big">ء</div>همزه ← گربه<code>U+0621 (Fancy)</code></div>
+      <div><div class="big">&#xE000;</div>صورت گربه<code>U+E000</code></div>
+      <div><div class="big">&#xE001;</div>ردّ پنجه<code>U+E001</code></div>
+      <div><div class="big f1">&#xE000;&#xE001;</div>در حالت رسمی هم<code>Ajor</code></div>
+    </div>
+  </div>
+</section>
+
+<main class="wrap">
+  <section>
+    <h2>استفاده</h2>
+<pre>@font-face {
+  font-family: "Ajor";
+  src: url("fonts/Ajor-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Ajor Fancy";
+  src: url("fonts/AjorFancy-Bold.woff2") format("woff2");
+  font-weight: 700;
+}
+body { font-family: "Ajor", sans-serif; }
+h1   { font-family: "Ajor Fancy"; }</pre>
+    <p>مجوز: SIL OFL 1.1. اجر از «دستخط» و «وزیرمتن» مشتق شده و آن‌ها هم متن‌باز هستند.</p>
+  </section>
+</main>
+<footer class="brick">اجر · ساخته‌شده با آجر و گربه 🐾</footer>
+<script>
+const L="ءآابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی۰۱۲۳۴۵۶۷۸۹";
+for(const id of["g1","g2"])document.getElementById(id).innerHTML=[...L].map(c=>`<span>${c}</span>`).join("");
+</script>
+</body>
+</html>
