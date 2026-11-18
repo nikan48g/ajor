@@ -12,6 +12,8 @@ Open-source Persian typeface with two personalities, inspired by bricks and anci
 
 Each family has nine weights (Thin to Black); Regular and Bold are used by the site. Both add `U+E000` (cat face) and `U+E001` (paw).
 
+**Download:** [Ajor.zip](https://nikan48g.github.io/ajor/dl/Ajor.zip) · [AjorFancy.zip](https://nikan48g.github.io/ajor/dl/AjorFancy.zip) · [both](https://nikan48g.github.io/ajor/dl/Ajor-All.zip) (rebuild with `python src/pack.py`)
+
 **Site:** https://nikan48g.github.io/ajor/ · **Fonts:** [`fonts/`](fonts) (TTF + WOFF2)
 
 ## Build
