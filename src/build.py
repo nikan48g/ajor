@@ -19,8 +19,9 @@ OUT = os.path.join(HERE, "..", "fonts")
 
 # family, base dir, file prefix, rounding radius (font units) per weight, cat hamza?
 STYLES = [
-    ("Ajor", "DastkhatDiamond", {"Regular": 11, "Bold": 16}, False),
-    ("Ajor Fancy", "DastkhatBarDots", {"Regular": 18, "Bold": 26}, True),
+    # style -> (Dastkhat weight to start from, corner radius); heavier than Dastkhat on purpose
+    ("Ajor", "DastkhatDiamond", {"Regular": ("Medium", 38), "Bold": ("ExtraBold", 50)}, False, 1.45),
+    ("Ajor Fancy", "DastkhatBarDots", {"Regular": ("SemiBold", 56), "Bold": ("Black", 70)}, True, 1.45),
 ]
 
 
@@ -74,6 +75,30 @@ def region(gs, name):
     return res
 
 
+def grow_dots(g, k, spread):
+    """Enlarge dot-sized islands about their centre; spread=True also pushes touching dots apart
+    (so diamonds do not fuse), spread=False lets them fuse (joined dots)."""
+    parts = list(g.geoms) if hasattr(g, "geoms") else [g]
+    if len(parts) < 2:
+        return g
+    def dot(p):
+        x0, y0, x1, y1 = p.bounds
+        return p.area < 120000 and x1 - x0 < 600 and y1 - y0 < 600 and not p.interiors
+    dots = [p for p in parts if dot(p)]
+    rest = [p for p in parts if not dot(p)]
+    if not dots:
+        return g
+    cen = unary_union(dots).centroid
+    out = []
+    for p in dots:
+        q = affinity.scale(p, k, k, origin="centroid")
+        if spread and len(dots) > 1:
+            c = p.centroid
+            q = affinity.translate(q, (c.x - cen.x) * (k - 1), (c.y - cen.y) * (k - 1))
+        out.append(q)
+    return unary_union(rest + out)
+
+
 def to_glyph(geom):
     pen = TTGlyphPen(None)
     geoms = list(geom.geoms) if hasattr(geom, "geoms") else [geom]
@@ -94,6 +119,13 @@ def to_glyph(geom):
 
 
 def round_geom(g, r):
+    for rr in (r, r / 2, r / 4, 0):  # thin ornaments would vanish at full radius
+        out = _round(g, rr) if rr else g
+        if not out.is_empty:
+            return out
+
+
+def _round(g, r):
     g = g.buffer(r, quad_segs=4).buffer(-r, quad_segs=4)       # soften concave corners
     g = g.buffer(-r, quad_segs=4).buffer(r, quad_segs=4)       # soften convex corners
     return g.simplify(0.7)
@@ -147,16 +179,16 @@ def set_names(font, family, style):
         n.setName("Ajor derives from Dastkhat and Vazirmatn (OFL 1.1).", 10, pid, eid, lid)
 
 
-def build(family, src, radii, cat):
-    for style, r in radii.items():
-        path = os.path.join(REF, src, "TTF", f"{src}-{style}.ttf")
+def build(family, src, radii, cat, dotk):
+    for style, (srcw, r) in radii.items():
+        path = os.path.join(REF, src, "TTF", f"{src}-{srcw}.ttf")
         f = TTFont(path)
         gs = f.getGlyphSet()
         glyf = f["glyf"]
         todo = [n for n in f.getGlyphOrder() if not glyf[n].isComposite() and glyf[n].numberOfContours > 0]
         new = {}
         for n in todo:
-            new[n] = to_glyph(round_geom(region(gs, n), r))
+            new[n] = to_glyph(round_geom(grow_dots(region(gs, n), dotk, not cat), r))
         for n, g in new.items():
             glyf[n] = g
 
