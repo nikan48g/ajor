@@ -8,7 +8,7 @@ import os
 from fontTools.ttLib import TTFont, newTable
 from fontTools.pens.basePen import BasePen
 from fontTools.pens.ttGlyphPen import TTGlyphPen
-from shapely.geometry import Polygon, box, Point
+from shapely.geometry import Polygon, box, Point, LineString
 from shapely.geometry.polygon import orient
 from shapely.ops import unary_union, nearest_points
 from shapely import affinity
@@ -94,6 +94,8 @@ def keep_joins(body, orig, adv, w):
                 continue
             y0, y1 = h.bounds[1], h.bounds[3]
             add.append(orig.intersection(box(x - w, y0 - 1, x + w, y1 + 1)))
+            # overlap the neighbour by a few units: abutting outlines show a hairline seam in Word/GDI
+            add.append(affinity.translate(orig.intersection(box(x - 6, y0 - 1, x + 6, y1 + 1)), -8 if x == 0 else 8, 0))
     return unary_union([body] + add) if add else body
 
 
@@ -124,6 +126,21 @@ def process(gs, n, adv, r, dotk, spread, stem):
             L = (vx * vx + vy * vy) ** 0.5 or 1
             q = affinity.translate(q, 6 * vx / L, 6 * vy / L)
         out.append(q)
+    if spread:  # formal style: diamonds must not fuse; fancy style joins dots on purpose
+        gap = 0.22 * stem
+        for _ in range(120):
+            moved = False
+            for i in range(len(out)):
+                for j in range(i + 1, len(out)):
+                    if out[i].distance(out[j]) < gap:
+                        a, b = out[i].centroid, out[j].centroid
+                        vx, vy = b.x - a.x, b.y - a.y
+                        L = (vx * vx + vy * vy) ** 0.5 or 1
+                        out[i] = affinity.translate(out[i], -2 * vx / L, -2 * vy / L)
+                        out[j] = affinity.translate(out[j], 2 * vx / L, 2 * vy / L)
+                        moved = True
+            if not moved:
+                break
     return unary_union([body] + out)
 
 
@@ -160,20 +177,32 @@ def _round(g, r):
 
 
 def cat_face():
-    """Little cat head, ~620 wide, bottom at y=0. Diamond nose nods to the Diamond dots."""
-    head = box(-250, 0, 250, 400).buffer(60, quad_segs=6)
-    ear = Polygon([(-300, 330), (-310, 600), (-90, 440)])
-    cat = unary_union([head, ear, affinity.scale(ear, -1, 1, origin=(0, 0))]).buffer(14).buffer(-14)
-    eyes = [Point(x, 250).buffer(36) for x in (-125, 125)]
-    nose = Polygon([(0, 170), (36, 130), (0, 90), (-36, 130)])
-    mouth = [box(-90, 40, -10, 62), box(10, 40, 90, 62)]
+    """Recognisable cat head: wide head, two tall pointed ears, eye holes, nose, mouth, whiskers."""
+    head = affinity.scale(Point(0, 230).buffer(1, quad_segs=16), 330, 250)
+    ear_l = Polygon([(-330, 300), (-300, 720), (-40, 470)])
+    ear_r = affinity.scale(ear_l, -1, 1, origin=(0, 0))
+    cat = unary_union([head, ear_l, ear_r]).buffer(12).buffer(-12)
+    whisk = []
+    for sx in (-1, 1):
+        for (y0, y1) in ((215, 300), (150, 150), (85, 0)):
+            whisk.append(LineString([(sx * 280, y0), (sx * 530, y1)]).buffer(15, cap_style="round"))
+    cat = unary_union([cat] + whisk)
+    eyes = [affinity.scale(Point(x, 290).buffer(1, quad_segs=8), 46, 66) for x in (-135, 135)]
+    nose = Polygon([(-45, 190), (45, 190), (0, 135)])
+    mouth = [LineString([(0, 135), (0, 100), (-70, 70), (-120, 95)]).buffer(11, cap_style="round"),
+             LineString([(0, 100), (70, 70), (120, 95)]).buffer(11, cap_style="round")]
     return cat.difference(unary_union(eyes + [nose] + mouth))
 
 
 def paw():
-    pad = affinity.scale(Point(0, 0).buffer(150, quad_segs=6), 1.2, 0.9)
-    toes = [Point(x, y).buffer(70, quad_segs=6) for x, y in ((-210, 230), (-75, 320), (75, 320), (210, 230))]
-    return unary_union([affinity.translate(pad, 0, 0)] + toes)
+    """Cat paw print: four oval toes arcing over one big pad."""
+    pad = unary_union([affinity.scale(Point(0, 0).buffer(1, quad_segs=12), 230, 170),
+                       Point(-120, 50).buffer(120, quad_segs=10), Point(120, 50).buffer(120, quad_segs=10)])
+    toes = []
+    for x, y, ang in ((-270, 330, 28), (-100, 450, 8), (100, 450, -8), (270, 330, -28)):
+        t = affinity.scale(Point(0, 0).buffer(1, quad_segs=10), 72, 108)
+        toes.append(affinity.translate(affinity.rotate(t, ang, origin=(0, 0)), x, y))
+    return unary_union([pad] + toes)
 
 
 def add_glyph(font, name, cp, geom, extra=70):
@@ -234,8 +263,8 @@ def build(family, src, rfrac, cat, dotk):
         for n, g in new.items():
             glyf[n] = g
 
-        add_glyph(f, "ajor.cat", 0xE000, affinity.scale(cat_face(), 1.5, 1.5, origin=(0, 0)))
-        add_glyph(f, "ajor.paw", 0xE001, affinity.scale(paw(), 1.3, 1.3, origin=(0, 0)))
+        add_glyph(f, "ajor.cat", 0xE000, affinity.scale(cat_face(), 1.15, 1.15, origin=(0, 0)))
+        add_glyph(f, "ajor.paw", 0xE001, affinity.scale(paw(), 1.1, 1.1, origin=(0, 0)))
         add_hamza_cat_ligature(f)  # two hamzas in a row become the cat; a single hamza stays a hamza
         empty = [n for n in todo if glyf[n].numberOfContours == 0]
         assert not empty, empty[:10]

@@ -7,7 +7,7 @@ from docx.oxml import OxmlElement, parse_xml
 
 W = ["Thin", "ExtraLight", "Light", "Regular", "Medium", "SemiBold", "Bold", "ExtraBold", "Black"]
 FONTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "fonts")
-OUT = os.path.join(FONTS, "..", "Ajor-Specimen-v3.docx")
+OUT = os.path.join(FONTS, "..", "Ajor-Specimen-v4.docx")
 TXT = "آجر به آجر، معبد ساخته می‌شود. ب پ ت ث ج چ ح خ ش گ ژ ء ۰۱۲۳۴۵۶۷۸۹ \ue000 \ue001"
 
 
