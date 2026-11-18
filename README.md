@@ -8,7 +8,7 @@ Open-source Persian typeface with two personalities, inspired by bricks and anci
 | Family | Style |
 |---|---|
 | **Ajor** | formal, rounded corners, diamond dots |
-| **Ajor Fancy** | round dots, joined dots, round sarkesh, hamza (ء) is a cat |
+| **Ajor Fancy** | round dots, joined dots, round sarkesh, two hamzas in a row (ءء) become a cat |
 
 Each family has nine weights (Thin to Black); Regular and Bold are used by the site. Both add `U+E000` (cat face) and `U+E001` (paw).
 

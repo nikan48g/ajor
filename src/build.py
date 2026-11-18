@@ -10,7 +10,7 @@ from fontTools.pens.basePen import BasePen
 from fontTools.pens.ttGlyphPen import TTGlyphPen
 from shapely.geometry import Polygon, box, Point
 from shapely.geometry.polygon import orient
-from shapely.ops import unary_union
+from shapely.ops import unary_union, nearest_points
 from shapely import affinity
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -76,28 +76,55 @@ def region(gs, name):
     return res
 
 
-def grow_dots(g, k, spread):
-    """Enlarge dot-sized islands about their centre; spread=True also pushes touching dots apart
-    (so diamonds do not fuse), spread=False lets them fuse (joined dots)."""
+def split_dots(g):
     parts = list(g.geoms) if hasattr(g, "geoms") else [g]
-    if len(parts) < 2:
-        return g
     def dot(p):
         x0, y0, x1, y1 = p.bounds
-        return p.area < 120000 and x1 - x0 < 600 and y1 - y0 < 600 and not p.interiors
-    dots = [p for p in parts if dot(p)]
-    rest = [p for p in parts if not dot(p)]
-    if not dots:
-        return g
+        return len(parts) > 1 and p.area < 120000 and x1 - x0 < 600 and y1 - y0 < 600 and not p.interiors
+    return [p for p in parts if not dot(p)], [p for p in parts if dot(p)]
+
+
+def keep_joins(body, orig, adv, w):
+    """Rounding must not notch the strokes that connect to the neighbouring letter: restore the original edge band there."""
+    add = []
+    for x in (0, adv):
+        hit = orig.intersection(box(x - 3, -3000, x + 3, 4000))
+        for h in getattr(hit, "geoms", [hit]):
+            if h.is_empty:
+                continue
+            y0, y1 = h.bounds[1], h.bounds[3]
+            add.append(orig.intersection(box(x - w, y0 - 1, x + w, y1 + 1)))
+    return unary_union([body] + add) if add else body
+
+
+def process(gs, n, adv, r, dotk, spread, stem):
+    g = region(gs, n)
+    rest, dots = split_dots(g)
+    if not dots or not rest:  # no letter body (e.g. colon): just round it
+        return keep_joins(round_geom(g, r), g, adv, 2.2 * r)
+    orig_rest = unary_union(rest)
+    body = keep_joins(unary_union([round_geom(p, r) for p in rest]), orig_rest, adv, 2.2 * r)
     cen = unary_union(dots).centroid
     out = []
     for p in dots:
-        q = affinity.scale(p, k, k, origin="centroid")
-        if spread and len(dots) > 1:
+        d0 = p.distance(orig_rest)
+        q = affinity.scale(p, dotk, dotk, origin="centroid")
+        if spread and len(dots) > 1:  # keep diamonds apart; joined-dot style lets them fuse
             c = p.centroid
-            q = affinity.translate(q, (c.x - cen.x) * (k - 1), (c.y - cen.y) * (k - 1))
+            q = affinity.translate(q, (c.x - cen.x) * (dotk - 1), (c.y - cen.y) * (dotk - 1))
+        q = round_geom(q, r)
+        target = max(d0, 0.2 * stem)  # dots must never touch the letter body
+        for _ in range(80):
+            if q.distance(body) >= target:
+                break
+            pb, pd = nearest_points(body, q)
+            vx, vy = pd.x - pb.x, pd.y - pb.y
+            if vx == 0 and vy == 0:
+                vx, vy = q.centroid.x - body.centroid.x, q.centroid.y - body.centroid.y
+            L = (vx * vx + vy * vy) ** 0.5 or 1
+            q = affinity.translate(q, 6 * vx / L, 6 * vy / L)
         out.append(q)
-    return unary_union(rest + out)
+    return unary_union([body] + out)
 
 
 def to_glyph(geom):
@@ -165,6 +192,20 @@ def add_glyph(font, name, cp, geom, extra=70):
     return geom, adv
 
 
+def add_hamza_cat_ligature(font):
+    from fontTools.ttLib.tables import otTables as ot
+    ham = font.getBestCmap()[0x0621]
+    lig = ot.Ligature(); lig.Component = [ham]; lig.LigGlyph = "ajor.cat"
+    st = ot.LigatureSubst(); st.Format = 1; st.ligatures = {ham: [lig]}
+    lk = ot.Lookup(); lk.LookupType = 4; lk.LookupFlag = 0; lk.SubTable = [st]; lk.SubTableCount = 1
+    g = font["GSUB"].table
+    g.LookupList.Lookup.append(lk); g.LookupList.LookupCount = len(g.LookupList.Lookup)
+    new = g.LookupList.LookupCount - 1
+    for fr in g.FeatureList.FeatureRecord:  # shapers read only the first feature of a tag, so join the existing liga
+        if fr.FeatureTag == "liga":
+            fr.Feature.LookupListIndex.append(new); fr.Feature.LookupCount = len(fr.Feature.LookupListIndex)
+
+
 def set_names(font, family, style):
     n = font["name"]
     ps = (family + "-" + style).replace(" ", "")
@@ -189,16 +230,13 @@ def build(family, src, rfrac, cat, dotk):
         stem = region(gs, "uni0627").bounds
         r = max(3, rfrac * (stem[2] - stem[0]))
         todo = [n for n in f.getGlyphOrder() if not glyf[n].isComposite() and glyf[n].numberOfContours > 0]
-        new = {n: to_glyph(round_geom(grow_dots(region(gs, n), dotk, not cat), r)) for n in todo}
+        new = {n: to_glyph(process(gs, n, f['hmtx'][n][0], r, dotk, not cat, stem[2] - stem[0])) for n in todo}
         for n, g in new.items():
             glyf[n] = g
 
         add_glyph(f, "ajor.cat", 0xE000, affinity.scale(cat_face(), 1.5, 1.5, origin=(0, 0)))
         add_glyph(f, "ajor.paw", 0xE001, affinity.scale(paw(), 1.3, 1.3, origin=(0, 0)))
-        if cat:  # fancy: hamza itself becomes a little cat
-            hn = f.getBestCmap()[0x0621]
-            g = affinity.scale(cat_face(), 1.5, 1.5, origin=(0, 0))
-            add_glyph(f, hn, None, affinity.translate(g, 0, getattr(glyf[hn], "yMin", 0)))
+        add_hamza_cat_ligature(f)  # two hamzas in a row become the cat; a single hamza stays a hamza
         empty = [n for n in todo if glyf[n].numberOfContours == 0]
         assert not empty, empty[:10]
         set_names(f, family, style)
