@@ -10,7 +10,7 @@ Open-source Persian typeface with two personalities, inspired by bricks and anci
 | **Ajor** | formal, rounded corners, diamond dots |
 | **Ajor Fancy** | round dots, joined dots, round sarkesh, hamza (ء) is a cat |
 
-Each family has Regular and Bold. Both add `U+E000` (cat face) and `U+E001` (paw).
+Each family has nine weights (Thin to Black); Regular and Bold are used by the site. Both add `U+E000` (cat face) and `U+E001` (paw).
 
 **Site:** https://nikan48g.github.io/ajor/ · **Fonts:** [`fonts/`](fonts) (TTF + WOFF2)
 

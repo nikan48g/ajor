@@ -17,12 +17,13 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REF = os.path.join(HERE, "..", "_ref", "fonts", "Main")
 OUT = os.path.join(HERE, "..", "fonts")
 
-# family, base dir, file prefix, rounding radius (font units) per weight, cat hamza?
+# family, base dir, corner radius as a fraction of stem width, cat hamza?, dot scale
 STYLES = [
-    # style -> (Dastkhat weight to start from, corner radius); heavier than Dastkhat on purpose
-    ("Ajor", "DastkhatDiamond", {"Regular": ("Medium", 38), "Bold": ("ExtraBold", 50)}, False, 1.45),
-    ("Ajor Fancy", "DastkhatBarDots", {"Regular": ("SemiBold", 56), "Bold": ("Black", 70)}, True, 1.45),
+    ("Ajor", "DastkhatDiamond", 0.14, False, 1.3),
+    ("Ajor Fancy", "DastkhatBarDots", 0.26, True, 1.35),
 ]
+WEIGHTS = {"Thin": 100, "ExtraLight": 200, "Light": 300, "Regular": 400, "Medium": 500,
+           "SemiBold": 600, "Bold": 700, "ExtraBold": 800, "Black": 900}
 
 
 class Flatten(BasePen):
@@ -167,46 +168,42 @@ def add_glyph(font, name, cp, geom, extra=70):
 def set_names(font, family, style):
     n = font["name"]
     ps = (family + "-" + style).replace(" ", "")
-    drop = {1, 2, 3, 4, 6, 16, 17, 21, 22, 25}
-    n.names = [x for x in n.names if x.nameID not in drop]
-    typo_ok = style in ("Regular", "Bold")
+    n.names = [x for x in n.names if x.nameID not in {1, 2, 3, 4, 6, 16, 17, 21, 22, 25}]
+    ribbi = style in ("Regular", "Bold")
     for pid, eid, lid in ((3, 1, 0x409), (1, 0, 0)):
-        n.setName(family, 1, pid, eid, lid)
-        n.setName(style if typo_ok else "Regular", 2, pid, eid, lid)
-        n.setName(f"{family} {style}; Ajor 0.1", 3, pid, eid, lid)
+        n.setName(family if ribbi else f"{family} {style}", 1, pid, eid, lid)
+        n.setName(style if ribbi else "Regular", 2, pid, eid, lid)
+        n.setName(f"{family} {style}; Ajor 0.2", 3, pid, eid, lid)
         n.setName(f"{family} {style}", 4, pid, eid, lid)
         n.setName(ps, 6, pid, eid, lid)
+        n.setName(family, 16, pid, eid, lid)  # typographic family keeps Ajor and Ajor Fancy apart
+        n.setName(style, 17, pid, eid, lid)
         n.setName("Ajor derives from Dastkhat and Vazirmatn (OFL 1.1).", 10, pid, eid, lid)
 
 
-def build(family, src, radii, cat, dotk):
-    for style, (srcw, r) in radii.items():
-        path = os.path.join(REF, src, "TTF", f"{src}-{srcw}.ttf")
-        f = TTFont(path)
+def build(family, src, rfrac, cat, dotk):
+    for style, wclass in WEIGHTS.items():
+        f = TTFont(os.path.join(REF, src, "TTF", f"{src}-{style}.ttf"))
         gs = f.getGlyphSet()
         glyf = f["glyf"]
+        stem = region(gs, "uni0627").bounds
+        r = max(3, rfrac * (stem[2] - stem[0]))
         todo = [n for n in f.getGlyphOrder() if not glyf[n].isComposite() and glyf[n].numberOfContours > 0]
-        new = {}
-        for n in todo:
-            new[n] = to_glyph(round_geom(grow_dots(region(gs, n), dotk, not cat), r))
+        new = {n: to_glyph(round_geom(grow_dots(region(gs, n), dotk, not cat), r)) for n in todo}
         for n, g in new.items():
             glyf[n] = g
 
-        cp_cat, cp_paw = 0xE000, 0xE001
-        cg, _ = add_glyph(f, "ajor.cat", cp_cat, affinity.scale(cat_face(), 1.5, 1.5, origin=(0, 0)))
-        add_glyph(f, "ajor.paw", cp_paw, affinity.scale(paw(), 1.3, 1.3, origin=(0, 0)))
+        add_glyph(f, "ajor.cat", 0xE000, affinity.scale(cat_face(), 1.5, 1.5, origin=(0, 0)))
+        add_glyph(f, "ajor.paw", 0xE001, affinity.scale(paw(), 1.3, 1.3, origin=(0, 0)))
         if cat:  # fancy: hamza itself becomes a little cat
-            cmap = f.getBestCmap()
-            hn = cmap[0x0621]
+            hn = f.getBestCmap()[0x0621]
             g = affinity.scale(cat_face(), 1.5, 1.5, origin=(0, 0))
-            old = glyf[hn]
-            ymin = getattr(old, "yMin", 0)
-            g, adv = add_glyph(f, hn, None, affinity.translate(g, 0, ymin))
+            add_glyph(f, hn, None, affinity.translate(g, 0, getattr(glyf[hn], "yMin", 0)))
         empty = [n for n in todo if glyf[n].numberOfContours == 0]
         assert not empty, empty[:10]
         set_names(f, family, style)
-        f["OS/2"].usWeightClass = 700 if style == "Bold" else 400
-        f["OS/2"].fsSelection = (f["OS/2"].fsSelection & ~0x61) | (0x20 if style == "Bold" else 0x40)
+        f["OS/2"].usWeightClass = wclass
+        f["OS/2"].fsSelection = (f["OS/2"].fsSelection & ~0x61) | (0x20 if style == "Bold" else 0x40 if style == "Regular" else 0)
         f["head"].macStyle = 1 if style == "Bold" else 0
         os.makedirs(OUT, exist_ok=True)
         base = os.path.join(OUT, f"{family.replace(' ', '')}-{style}")
